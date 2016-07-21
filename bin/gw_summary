@@ -667,6 +667,7 @@ if opts.bulk_read and not opts.html_only:
 # Process all tabs
 
 # TODO: consider re-working this loop as TabList.process_all
+
 for tab in tablist:
     vprint("\n-------------------------------------------------\n")
     if tab.parent:

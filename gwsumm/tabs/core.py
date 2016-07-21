@@ -91,7 +91,6 @@ class Tab(object):
                  children=list(), group=None, path=os.curdir, hidden=False):
         """Initialise a new `Tab`.
         """
-        print('Tab class __init__ running')
         # names
         self.name = name
         self.shortname = shortname
@@ -358,7 +357,6 @@ class Tab(object):
                    return super(MyTab, cls).from_ini(cp, section, foo, bar=bar)
         """
         # get tab name
-        print('running Tab class from_ini')
         try:
             # name given explicitly
             name = re_quote.sub('', cp.get(section, 'name'))
@@ -703,7 +701,6 @@ class Tab(object):
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
         """
-        print('running write_html for TAB class')
         # setup directories
         outdir = os.path.split(self.index)[0]
         if outdir and not os.path.isdir(outdir):
@@ -808,7 +805,7 @@ class SummaryArchiveMixin(object):
             start = config.getint(section, 'gps-start-time')
         if end is None:
             end = config.getint(section, 'gps-end-time')
-        print('running from_ini of summaryarchive')
+
         return super(SummaryArchiveMixin, cls).from_ini(config, section, start,
                                                         end, **kwargs)
 
@@ -902,7 +899,6 @@ class TabList(list):
             if tab.parent in parents:
                 tab.set_parent(parents[tab.parent])
             elif not isinstance(tab.parent, Tab):
-                print('tab.span = %s' % str(tab.span))
                 tab.set_parent(get_tab('default')(tab.parent, *tab.span))
             parents.setdefault(tab.parent.name, tab.parent)
             if tab not in tab.parent.children:
