@@ -25,6 +25,10 @@ import re
 from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
 
+# import filter evals
+from math import pi
+import numpy
+
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
@@ -37,7 +41,7 @@ ERRC = '\033[91m'
 ENDC = '\033[0m'
 
 # bad things to eval
-UNSAFE_EVAL_STRS = ['os.path', 'shutil', '\.rm', '\.mv']
+UNSAFE_EVAL_STRS = ['os\.', 'shutil', '\.rm', '\.mv']
 UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
 
 
@@ -45,7 +49,7 @@ def elapsed_time():
     """Return the time (seconds) since this job started
     """
     import time
-    time.time() - globalv.START
+    return time.time() - globalv.START
 
 
 def vprint(message, verbose=True, stream=sys.stdout, profile=True):
