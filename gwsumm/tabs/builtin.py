@@ -118,7 +118,10 @@ class ExternalTab(Tab):
 
 
         """
-        url = cp.get(section, 'url')
+        if 'states' in kwargs.keys():
+            url = {'states': kwargs['states'], 'options': kwargs['options']}
+        else:
+            url = cp.get(section, 'url')
         if cp.has_option(section, 'error'):
             kwargs.setdefault(
                 'error', re_quote.sub('', cp.get(section, 'error')))
@@ -348,7 +351,6 @@ class PlotTab(Tab):
         tab : `PlotTab`
             a new tab defined from the configuration
         """
-        print('running PLOTTAB from_ini')
         cp = GWSummConfigParser.from_configparser(cp)
 
         kwargs.setdefault('path', '')
@@ -606,7 +608,6 @@ class StateTab(PlotTab):
     def __init__(self, name, states=list(), **kwargs):
         """Initialise a new `Tab`.
         """
-        print('running STATETAB __init__')
         super(StateTab, self).__init__(name, **kwargs)
         # process states
         if not isinstance(states, (tuple, list)):
@@ -624,14 +625,12 @@ class StateTab(PlotTab):
         The set of states will be linked in the given order with a switch
         on the far-right of the HTML navigation bar.
         """
-        print('running statetab states property')
         return self._states
 
     @states.setter
     def states(self, statelist, default=None):
-        print('running statetab state setter function')
         self._states = []
-        for state in statelist:
+        for i, state in enumerate(statelist):
             # allow default indication by trailing asterisk
             if state == default:
                 default_ = True
@@ -653,7 +652,9 @@ class StateTab(PlotTab):
         register : `bool`, default: `False`
             automatically register all new states
         """
-        if not isinstance(state, SummaryState):
+        if isinstance(state, ExternalTab):
+            state = get_state('All')
+        elif not isinstance(state, SummaryState):
             state = get_state(state)
         self._states.append(state)
         if default:
@@ -686,6 +687,7 @@ class StateTab(PlotTab):
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):
+
         # parse states and retrieve their definitions
         if cp.has_option(section, 'states'):
             # states listed individually
@@ -822,8 +824,6 @@ class StateTab(PlotTab):
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
         """
-        print('running write_html on StateTab')
-        print('states: %s' % self.states)
         default = self.states.index(self.defaultstate)
         return super(PlotTab, self).write_html(
             self.frames[default], title=title, subtitle=subtitle,
@@ -840,6 +840,7 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
 
     def __init__(self, name, start, end, mode=None, states=list(), **kwargs):
         super(ArchivedStateTab, self).__init__(name, states=states, **kwargs)
+
         self.span = (start, end)
         self.mode = mode
 
@@ -859,18 +860,19 @@ class ExternalMultiTab(StateTab, ExternalTab):
     type = 'external-multi'
 
     def __init__(self, name, url,  **kwargs):
-        print('running external-multi class __init__')
         super(ExternalTab, self).__init__(name, url, **kwargs)
-    
-    @property
-    def states(self, **kwargs):
-        print('runinng states property')
-        return self._states
-
-    @states.setter
-    def states(self, **kwargs):
-        self._states = []
-        print('kwargs2: %s' % kwargs)
+        states = []
+        for url, option in zip(url['states'], url['options']):
+            states.append(ExternalTab(url, option))
+        self.states = states
+#    @property
+#    def states(self, **kwargs):
+#        print('runinng states property')
+#        #return self._states
+#
+#    @states.setter
+#    def states(self, **kwargs):
+#        self._states = []
         
     @classmethod
     def from_ini(cls, config, section, start, end, *args, **kwargs):
@@ -878,30 +880,22 @@ class ExternalMultiTab(StateTab, ExternalTab):
                                config.options(section))
         statelist = map(lambda state: config.get(section, state), 
                         state_options)
-        options = map(lambda opt: opt[4:], state_options)
+        options = map(lambda opt: opt[4:].replace('-', ' '), state_options)
         if not len(statelist):
             print('Must have at least one state beginning with \`url-\`')
             raise IndexError
 
         kwargs.setdefault('states', statelist)
-        print("""options: %s
-            statelist: %s
-            section: %s
-            start: %s
-            end: %s
-            args: %s
-            kwargs: %s
-        """ % (state_options, statelist, section, start, end, args, kwargs))
-        return super(ExternalMultiTab, cls).from_ini(
-                     config, section, *args, **kwargs)
+        kwargs.setdefault('options', options)
+        # this runs plottab from_ini
+        super(ExternalMultiTab, cls).from_ini(config, section,
+                                              *args, **kwargs)
 
 register_tab(ExternalMultiTab)
 
 class ArchivedExternalMultiTab(SummaryArchiveMixin, ExternalMultiTab):
     type = 'archived-external-multi'
     def __init__(self, name, urls, span=(), mode=None, **kwargs):
-        print('Running archived-external-multi class __init__')
-        print('urls: %s' % urls)
         super(ArchivedExternalMultiTab, self).__init__(name, urls)
         self.mode = mode
 
