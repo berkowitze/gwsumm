@@ -43,7 +43,7 @@ except ImportError:
 from gwpy.spectrogram import SpectrogramList
 
 from .. import globalv
-from ..utils import (vprint, count_free_cores)
+from ..utils import (vprint, count_free_cores, safe_eval)
 from ..channels import (get_channel, re_channel,
                         split_combination as split_channel_combination)
 from .utils import (use_segmentlist, make_globalv_key, get_fftparams)
@@ -96,12 +96,9 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
 
     channel = get_channel(channel)
 
-    # special-case methods
-    if fftparams.get('method', None) is None and format in ['rayleigh']:
-        fftparams['method'] = format
-    # or, if we aren't given a method, check to see whether data have already
+    # if we aren't given a method, check to see whether data have already
     # been processed, if so, choose that one
-    elif fftparams.get('method', None) is None:
+    if fftparams.get('method', None) is None:
         methods = set([key.split(';')[1] for key in globalv.SPECTROGRAMS
                        if key.startswith('%s;' % channel.ndsname)])
         try:
@@ -111,6 +108,9 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
 
     # clean fftparams dict using channel default values
     fftparams = get_fftparams(channel, **fftparams)
+    # override special-case methods
+    if format in ['rayleigh']:
+        fftparams.method = format
 
     # key used to store the coherence spectrogram in globalv
     key = make_globalv_key(channel, fftparams)
@@ -149,7 +149,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
             filter_ = None
         else:
             if isinstance(filter_, str):
-                filter_ = eval(filter_)
+                filter_ = safe_eval(filter_, strict=True)
 
         # get time-series data
         timeserieslist = get_timeseries(channel, new, config=config,
@@ -158,7 +158,8 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                                         datafind_error=datafind_error, nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
-            vprint("    Calculating spectrograms for %s" % str(channel))
+            vprint("    Calculating (%s) spectrograms for %s"
+                   % (fftparams['method'], str(channel)))
         for ts in timeserieslist:
             # if too short for a single segment, continue
             if abs(ts.span) < (stride + fftparams.get('overlap', 0)):

@@ -50,7 +50,7 @@ from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores)
+from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores, safe_eval)
 
 from .registry import (get_tab, register_tab)
 
@@ -226,10 +226,7 @@ class DataTab(DataTabBase):
             for key, val in cp.nditems(section):
                 if key.startswith('%d-' % index):
                     opt = key.split('-', 1)[1]
-                    try:
-                        mods[opt] = eval(val)
-                    except (NameError, SyntaxError):
-                        mods[opt] = val
+                    mods[opt] = safe_eval(val)
 
             # parse definition for section references
             try:
@@ -476,7 +473,7 @@ class DataTab(DataTabBase):
                              **fftparams)
         if len(raychannels):
             fp2 = fftparams.copy()
-            fp2['method'] = 'rayleigh'
+            fp2['method'] = fp2['format'] = 'rayleigh'
             get_spectrograms(raychannels, state, config=config, return_=False,
                              multiprocess=multiprocess, **fp2)
 
@@ -504,6 +501,8 @@ class DataTab(DataTabBase):
 
         for channel in self.get_channels(
                 'rayleigh-spectrum', all_data=all_data, read=True):
+            fp2 = fftparams.copy()
+            fp2['method'] = fp2['format'] = 'rayleigh'
             get_spectrum(channel, state, config=config, return_=False, **fp2)
 
         # --------------------------------------------------------------------
