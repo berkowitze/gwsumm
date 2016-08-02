@@ -608,7 +608,9 @@ class StateTab(PlotTab):
     def __init__(self, name, states=list(), **kwargs):
         """Initialise a new `Tab`.
         """
-        super(StateTab, self).__init__(name, **kwargs)
+        print('statetab __init__\nname: %s\nkwargs: %s' % (name, states))
+        print('xxx kwargs: %s\nxxx' % kwargs)
+        super(StateTab, self).__init__(name, states,**kwargs)
         # process states
         if not isinstance(states, (tuple, list)):
             states = [states]
@@ -652,9 +654,7 @@ class StateTab(PlotTab):
         register : `bool`, default: `False`
             automatically register all new states
         """
-        if isinstance(state, ExternalTab):
-            state = get_state('All')
-        elif not isinstance(state, SummaryState):
+        if not isinstance(state, SummaryState):
             state = get_state(state)
         self._states.append(state)
         if default:
@@ -860,7 +860,8 @@ class ExternalMultiTab(StateTab, ExternalTab):
     type = 'external-multi'
 
     def __init__(self, name, url,  **kwargs):
-        super(ExternalTab, self).__init__(name, url, **kwargs)
+        print('url: %s\nkwargs: %s' % (url, kwargs))
+        super(ExternalMultiTab, self).__init__(name, url, **kwargs)
         states = []
         for url, option in zip(url['states'], url['options']):
             states.append(ExternalTab(url, option))
@@ -888,8 +889,8 @@ class ExternalMultiTab(StateTab, ExternalTab):
         kwargs.setdefault('states', statelist)
         kwargs.setdefault('options', options)
         # this runs plottab from_ini
-        super(ExternalMultiTab, cls).from_ini(config, section,
-                                              *args, **kwargs)
+        return super(ExternalMultiTab, cls).from_ini(config, section,
+                                                     *args, **kwargs)
 
 register_tab(ExternalMultiTab)
 
