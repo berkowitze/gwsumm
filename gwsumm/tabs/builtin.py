@@ -860,7 +860,7 @@ class ExternalMultiTab(ExternalTab, StateTab):
     def from_ini(cls, cp, section, start, end, *args, **kwargs):
         state_options = filter(lambda opt: opt.startswith('url-'),
                                cp.options(section))
-        statelist = map(lambda state: cp.get(section, state), 
+        statelist = map(lambda state: cp.get(section, state),
                         state_options)
         options = map(lambda opt: opt[4:].replace('-', ' '), state_options)
         if not len(statelist):
