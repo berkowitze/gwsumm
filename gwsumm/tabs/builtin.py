@@ -217,6 +217,7 @@ class PlotTab(Tab):
                  afterword=None, **kwargs):
         """Initialise a new :class:`PlotTab`.
         """
+        print('got to plottab: kwargs-----: %s' % kwargs)
         super(PlotTab, self).__init__(name, **kwargs)
         self.plots = []
         for p in plots:
@@ -608,9 +609,7 @@ class StateTab(PlotTab):
     def __init__(self, name, states=list(), **kwargs):
         """Initialise a new `Tab`.
         """
-        print('statetab __init__\nname: %s\nkwargs: %s' % (name, states))
-        print('xxx kwargs: %s\nxxx' % kwargs)
-        super(StateTab, self).__init__(name, states,**kwargs)
+        super(StateTab, self).__init__(name, **kwargs)
         # process states
         if not isinstance(states, (tuple, list)):
             states = [states]
@@ -854,27 +853,16 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
         return super(ArchivedStateTab, cls).from_ini(config, section, start,
                                                      end, **kwargs)
 
+
 register_tab(ArchivedStateTab)
 
-class ExternalMultiTab(StateTab, ExternalTab):
+class ExternalMultiTab(ExternalTab, StateTab):
     type = 'external-multi'
 
-    def __init__(self, name, url,  **kwargs):
-        print('url: %s\nkwargs: %s' % (url, kwargs))
+    def __init__(self, name, url, span, **kwargs):
+        self.span = span
         super(ExternalMultiTab, self).__init__(name, url, **kwargs)
-        states = []
-        for url, option in zip(url['states'], url['options']):
-            states.append(ExternalTab(url, option))
-        self.states = states
-#    @property
-#    def states(self, **kwargs):
-#        print('runinng states property')
-#        #return self._states
-#
-#    @states.setter
-#    def states(self, **kwargs):
-#        self._states = []
-        
+
     @classmethod
     def from_ini(cls, config, section, start, end, *args, **kwargs):
         state_options = filter(lambda opt: opt.startswith('url-'),
@@ -888,16 +876,26 @@ class ExternalMultiTab(StateTab, ExternalTab):
 
         kwargs.setdefault('states', statelist)
         kwargs.setdefault('options', options)
+        kwargs.setdefault('span', (start, end))
         # this runs plottab from_ini
         return super(ExternalMultiTab, cls).from_ini(config, section,
                                                      *args, **kwargs)
+    def write_html(self, **kwargs):
+        names = self.url['options']
+        states = self.url['states']
+        self.states = []
+        for name, state in zip(names, states):
+            self.states.append(ExternalTab(name, state))
+        return super(StateTab, self).write_html(
+                tabs=self.states, css=kwargs['css'], js=kwargs['js'])
 
 register_tab(ExternalMultiTab)
 
 class ArchivedExternalMultiTab(SummaryArchiveMixin, ExternalMultiTab):
     type = 'archived-external-multi'
     def __init__(self, name, urls, span=(), mode=None, **kwargs):
-        super(ArchivedExternalMultiTab, self).__init__(name, urls)
+        print('archivedxmulti kwargs: %s' % kwargs)
+        super(ArchivedExternalMultiTab, self).__init__(name, urls, span)
         self.mode = mode
 
 register_tab(ArchivedExternalMultiTab)
