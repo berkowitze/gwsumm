@@ -31,6 +31,7 @@ from .. import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
 SummaryPlot = get_plot(None)
 DataPlot = get_plot('data')
 
@@ -849,10 +850,11 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
 
 register_tab(ArchivedStateTab)
 
+
 class ExternalMultiTab(ExternalTab, StateTab):
     type = 'external-multi'
 
-    def __init__(self, name, url, span, **kwargs):
+    def __init__(self, name, url, span, path, **kwargs):
         self.span = span
         super(ExternalMultiTab, self).__init__(name, url, **kwargs)
 
@@ -880,25 +882,37 @@ class ExternalMultiTab(ExternalTab, StateTab):
 
         return super(ExternalTab, cls).from_ini(cp, section, urls,
                                                 *args, **kwargs)
+
     def write_html(self, **kwargs):
         names = self.url['options']
         states = self.url['states']
         self.states = []
         for name, state in zip(names, states):
             self.states.append(ExternalTab(name, state))
+
         return super(StateTab, self).write_html(
                 tabs=self.states, css=kwargs['css'], js=kwargs['js'])
 
+    def build_html_content(self, content):
+        wrappedcontent = html.load(
+                self.url['states'][0], id_='content', error=self.error,
+                success=self.success)
+        return super(ExternalTab, self).build_html_content(wrappedcontent)
+
 register_tab(ExternalMultiTab)
+
 
 class ArchivedExternalMultiTab(SummaryArchiveMixin, ExternalMultiTab):
     type = 'archived-external-multi'
+
     def __init__(self, name, urls, span=(), mode=None, **kwargs):
-        print('archivedxmulti kwargs: %s' % kwargs)
-        super(ArchivedExternalMultiTab, self).__init__(name, urls, span)
+        super(ArchivedExternalMultiTab, self).__init__(
+                name, urls, span, kwargs['path'])
         self.mode = mode
+        self.path = kwargs['path']
 
 register_tab(ArchivedExternalMultiTab)
+
 
 class AboutTab(SummaryArchiveMixin, Tab):
     type = 'about'
